@@ -106,7 +106,6 @@ def apply_to_all_and_save():
 
 
 for img_name, img in images_obj.images.items():
-    global global_img
     print("Showing image:", img_name)
 
     # Show cv2 windows with trackbars n shit
