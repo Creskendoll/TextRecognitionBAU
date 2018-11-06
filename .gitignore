@@ -109,3 +109,6 @@ venv.bak/
 *.jpeg
 *.mp4
 *.mov
+
+# Vs code
+.vscode/
