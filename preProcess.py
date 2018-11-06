@@ -61,6 +61,30 @@ cv2.createTrackbar('Dilation Size', 'Images', 2, 5, changeDilationSize)
 # Uncomment this if u want to utilize mouse clicks  
 # cv2.setMouseCallback("Images", click)
 
+# fill holes in img
+def fill(img):
+    # TODO: fix
+    _, im_th = cv2.threshold(img, binary_threshold, 255, cv2.THRESH_BINARY)
+
+    # Copy the thresholded image.
+    im_floodfill = im_th.copy()
+    
+    # Mask used to flood filling.
+    # Notice the size needs to be 2 pixels than the image.
+    h, w = im_th.shape[:2]
+    mask = np.zeros((h+2, w+2), np.uint8)
+    
+    # Floodfill from point (0, 0)
+    cv2.floodFill(im_floodfill, mask, (0,0), 255)
+    
+    # Invert floodfilled image
+    im_floodfill_inv = cv2.bitwise_not(im_floodfill)
+    
+    # Combine the two images to get the foreground.
+    im_out = im_th | im_floodfill_inv
+
+    return im_out
+
 # define all pre processing stuff under this function
 def apply_pre_processing(image, resize_by=1, binary=False):
     # so that we don't alter the original image
@@ -74,8 +98,8 @@ def apply_pre_processing(image, resize_by=1, binary=False):
     # Automaticly determines threshold 
     # uses the defined threshold 
     if binary:
-        # (binary_threshold, img_binary) = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        new_image = cv2.threshold(new_image, binary_threshold, 255, cv2.THRESH_BINARY)[1]
+        # binary_threshold, img_binary = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        _, new_image = cv2.threshold(new_image, binary_threshold, 255, cv2.THRESH_BINARY)
 
     # TODO: Explain wtf the canny values do
     # https://docs.opencv.org/3.1.0/da/d22/tutorial_py_canny.html
@@ -115,6 +139,8 @@ for img_name, img in images_obj.images.items():
         # for mouse clicks
         # global_img = processed_image
         
+        processed_image = fill(processed_image)
+
         cv2.imshow('Images', processed_image)
 
         # Exit when Esc is pressed
