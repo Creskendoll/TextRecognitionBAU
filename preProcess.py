@@ -110,7 +110,7 @@ for img_name, img in images_obj.images.items():
 
     # Show cv2 windows with trackbars n shit
     while True:
-        processed_image = apply_pre_processing(img, resize_by=3)
+        processed_image = apply_pre_processing(img, resize_by=2)
         
         # for mouse clicks
         # global_img = processed_image

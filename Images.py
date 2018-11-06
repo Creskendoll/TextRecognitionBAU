@@ -7,7 +7,6 @@ import cv2
 class Images(object):
     # Load the images in folder
     def __init__(self, folder_name, grayscale=True, sub_folders=False, count=-1):
-        print("Loading folder:", os.path.abspath(folder_name))
         # create a dictionary of images with their names and actual data
         self.images = {}
         # define directories depending on how many folders we wanna dig in to
@@ -16,7 +15,9 @@ class Images(object):
         else:
             directories = self.walklevel(folder_name)
 
+        print("Loading folder:", os.path.abspath(folder_name))
         for root, dirs, files in directories:
+            print("Total files in directory:", len(files))
             for file_name in files:
                 if count != 0:
                     count = count - 1
@@ -69,7 +70,9 @@ class Images(object):
     # level is how deep we wanna go in the recursion
     def walklevel(self, some_dir, level=1):
         some_dir = some_dir.rstrip(os.path.sep)
-        assert os.path.isdir(some_dir)
+        if not os.path.isdir(some_dir):
+            print("Creating directory:", os.path.abspath(some_dir))
+            os.mkdir(some_dir)
         num_sep = some_dir.count(os.path.sep)
         for root, dirs, files in os.walk(some_dir):
             yield root, dirs, files
