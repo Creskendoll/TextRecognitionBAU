@@ -11,7 +11,7 @@ class Images(object):
         self.images = {}
         # define directories depending on how many folders we wanna dig in to
         if sub_folders:
-            directories = self.os.walk(folder_name)
+            directories = os.walk(folder_name)
         else:
             directories = self.walklevel(folder_name)
 
