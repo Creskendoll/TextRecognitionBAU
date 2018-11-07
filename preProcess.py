@@ -3,25 +3,23 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 from Images import Images
+import scipy as sp
+import scipy.ndimage
 
 in_folder = "./in/"
 out_folder = "./out/"
 max_binary_threshold = 255
 binary_threshold = 120
 dilatation_size = 1
-canny_min = 470
-canny_max = 550
+canny_min = 300
+canny_max = 500
 
 # Set {count} optional variable to read that many images
 # Read all images available
-images_obj = Images(in_folder, count=1)
+images_obj = Images(in_folder)
 
 global_img = None
 refPt = []
-
-def changeBinaryThreshold(val):
-    global binary_threshold
-    binary_threshold = val
 
 def changeCannyMin(val):
     global canny_min
@@ -53,7 +51,6 @@ def click(event, x, y, flags, param):
 
 cv2.namedWindow("Images", cv2.WINDOW_AUTOSIZE)
 
-cv2.createTrackbar('Binary Threshold', 'Images', 120, max_binary_threshold, changeBinaryThreshold)
 cv2.createTrackbar('Canny Min', 'Images', canny_min, 900, changeCannyMin)
 cv2.createTrackbar('Canny Max', 'Images', canny_max, 900, changeCannyMax)
 cv2.createTrackbar('Dilation Size', 'Images', 2, 5, changeDilationSize)
@@ -62,45 +59,30 @@ cv2.createTrackbar('Dilation Size', 'Images', 2, 5, changeDilationSize)
 # cv2.setMouseCallback("Images", click)
 
 # fill holes in img
-def fill(img):
-    # TODO: fix
-    _, im_th = cv2.threshold(img, binary_threshold, 255, cv2.THRESH_BINARY)
-
-    # Copy the thresholded image.
-    im_floodfill = im_th.copy()
-
-    # Mask used to flood filling.
-    # Notice the size needs to be 2 pixels than the image.
-    h, w = im_th.shape[:2]
-    mask = np.zeros((h+2, w+2), np.uint8)
-
-    # Floodfill from point (0, 0)
-    cv2.floodFill(im_floodfill, mask, (0,0), 255)
-
-    # Invert floodfilled image
-    im_floodfill_inv = cv2.bitwise_not(im_floodfill)
-
-    # Combine the two images to get the foreground.
-    im_out = im_th | im_floodfill_inv
-
-    return im_out
+def flood_fill(img,h_max=255):
+    input_array = np.copy(img) 
+    el = sp.ndimage.generate_binary_structure(2,2).astype(np.int)
+    inside_mask = sp.ndimage.binary_erosion(~np.isnan(input_array), structure=el)
+    output_array = np.copy(input_array)
+    output_array[inside_mask]=h_max
+    output_old_array = np.copy(input_array)
+    output_old_array.fill(0)   
+    el = sp.ndimage.generate_binary_structure(2,1).astype(np.int)
+    while not np.array_equal(output_old_array, output_array):
+        output_old_array = np.copy(output_array)
+        output_array = np.maximum(input_array,sp.ndimage.grey_erosion(output_array, footprint=el))
+    return output_array
 
 # define all pre processing stuff under this function
-def apply_pre_processing(image, resize_by=1, binary=False):
+def apply_pre_processing(image, resize_by=1):
     # so that we don't alter the original image
     new_image = image.copy()
 
-    new_image = new_image[240:320, 670:1250] # RoI
+    # new_image = new_image[240:320, 670:1250] # RoI
+    new_image = new_image[250:300, 680:1230] # RoI
 
     new_image = cv2.resize(new_image, (0,0), fx=resize_by, fy=resize_by)
-
-    # Convert image to binary
-    # Automaticly determines threshold
-    # uses the defined threshold
-    if binary:
-        # binary_threshold, img_binary = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        _, new_image = cv2.threshold(new_image, binary_threshold, 255, cv2.THRESH_BINARY)
-
+    
     # TODO: Explain wtf the canny values do
     # https://docs.opencv.org/3.1.0/da/d22/tutorial_py_canny.html
     # Note: We got rid of laplacian and sobel since we won't necesseraly talk about them in our report
@@ -110,43 +92,34 @@ def apply_pre_processing(image, resize_by=1, binary=False):
 
     # Dilation
     # https://docs.opencv.org/3.4/db/df6/tutorial_erosion_dilatation.html
-    element = cv2.getStructuringElement(cv2.MORPH_DILATE, (2*dilatation_size+1, 2*dilatation_size+1), (dilatation_size, dilatation_size))
+    element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilatation_size+1, dilatation_size+1), (dilatation_size, dilatation_size))
     new_image = cv2.dilate(canny_edge_img, element)
-
-    # Show images if needed
-    # plt.subplot(131),plt.imshow(img_gray, cmap=plt.cm.binary)
-    # plt.title('Gray Image'), plt.xticks([]), plt.yticks([])
-    # plt.subplot(132),plt.imshow(canny_edge, cmap='gray')
-    # plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
-    # plt.subplot(133),plt.imshow(dilatation_dst, cmap='gray')
-    # plt.title('Dilated Image'), plt.xticks([]), plt.yticks([])
-    # plt.show()
 
     return new_image
 
 def apply_to_all_and_save():
-    for img_name, img in images_obj.images.items():
-        images_obj.save_image(out_folder + img_name, apply_pre_processing(img))
-
+    for img_name, im in images_obj.images.items():
+        p_im = flood_fill(apply_pre_processing(im)) 
+        images_obj.save_image(out_folder + img_name, p_im)
 
 for img_name, img in images_obj.images.items():
     print("Showing image:", img_name)
 
     # Show cv2 windows with trackbars n shit
     while True:
-        processed_image = apply_pre_processing(img, resize_by=1)
+        processed_image = apply_pre_processing(img, resize_by=2)
 
         # for mouse clicks
         # global_img = processed_image
 
-        processed_image = fill(processed_image)
+        processed_image = flood_fill(processed_image)
 
         original_image = img[240:320, 670:1250] # RoI
 
         # original, grayscale, binary, canny
-        stacked_image = np.vstack((original_image, processed_image))
+        # stacked_image = np.vstack((original_image, processed_image))
         
-        cv2.imshow('Images', stacked_image)
+        cv2.imshow('Images', processed_image)
 
         # Exit when Esc is pressed
         k = cv2.waitKey(1) & 0xFF
