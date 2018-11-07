@@ -83,16 +83,20 @@ def apply_pre_processing(image, resize_by=1):
 
     new_image = cv2.resize(new_image, (0,0), fx=resize_by, fy=resize_by)
     
+    # Easy way
+    # ret,th = cv2.threshold(new_image,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    # return th
+
     # TODO: Explain wtf the canny values do
     # https://docs.opencv.org/3.1.0/da/d22/tutorial_py_canny.html
     # Note: We got rid of laplacian and sobel since we won't necesseraly talk about them in our report
     # Sobel we will but it will be covered under Canny
     # Edge detection
     canny_edge_img = cv2.Canny(new_image, canny_min, canny_max)
-
+    
     # Dilation
     # https://docs.opencv.org/3.4/db/df6/tutorial_erosion_dilatation.html
-    element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilatation_size+1, dilatation_size+1), (dilatation_size, dilatation_size))
+    element = cv2.getStructuringElement(cv2.MORPH_DILATE, (dilatation_size+1, dilatation_size+1), (dilatation_size, dilatation_size))
     new_image = cv2.dilate(canny_edge_img, element)
 
     return new_image
@@ -112,7 +116,7 @@ for img_name, img in images_obj.images.items():
         # for mouse clicks
         # global_img = processed_image
 
-        processed_image = flood_fill(processed_image)
+        # processed_image = flood_fill(processed_image)
 
         original_image = img[240:320, 670:1250] # RoI
 
