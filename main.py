@@ -10,5 +10,3 @@ if __name__ == "main":
     for img_name, img in images_obj.images.items():
         blob = Blob(img)
         b_boxes = blob.getBoundingBox()
-        
-

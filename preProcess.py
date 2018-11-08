@@ -16,7 +16,7 @@ canny_max = 500
 
 # Set {count} optional variable to read that many images
 # Read all images available
-images_obj = Images(in_folder, grayscale=True, count=1)
+images_obj = Images(in_folder, grayscale=True, count=5)
 
 global_img = None
 refPt = []
@@ -128,7 +128,7 @@ for img_name, img in images_obj.images.items():
         # global_img = processed_image
         processed_image = apply_pre_processing(img)
 
-        if fill == 1:
+        if fill:
             processed_image = flood_fill(processed_image)
 
         # OTSU is automatic

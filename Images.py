@@ -17,7 +17,11 @@ class Images(object):
 
         print("Loading folder:", os.path.abspath(folder_name))
         for root, dirs, files in directories:
-            print("Total files in directory:", len(files))
+            if count != -1:
+                print("Loading %d out of %d files." % (count, len(files)))
+            else:
+                print("Loading all of %d files." % len(files))
+
             for file_name in files:
                 if count != 0:
                     count = count - 1
