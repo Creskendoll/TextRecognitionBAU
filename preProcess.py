@@ -10,6 +10,7 @@ in_folder = "./in/"
 out_folder = "./out/"
 binary_threshold = 120
 dilatation_size = 1
+fill = 1
 canny_min = 300
 canny_max = 500
 
@@ -19,6 +20,10 @@ images_obj = Images(in_folder, grayscale=True, count=1)
 
 global_img = None
 refPt = []
+
+def changeFill(val):
+    global fill
+    fill = val
 
 def changeBinaryThreshold(val):
     global binary_threshold
@@ -58,6 +63,7 @@ cv2.createTrackbar('Binary Threshold', 'Images', binary_threshold, 255, changeBi
 cv2.createTrackbar('Canny Min', 'Images', canny_min, 900, changeCannyMin)
 cv2.createTrackbar('Canny Max', 'Images', canny_max, 900, changeCannyMax)
 cv2.createTrackbar('Dilation Size', 'Images', 2, 5, changeDilationSize)
+cv2.createTrackbar('Fill', 'Images', fill, 1, changeFill)
 
 # Uncomment this if u want to utilize mouse clicks
 # cv2.setMouseCallback("Images", click)
@@ -122,7 +128,8 @@ for img_name, img in images_obj.images.items():
         # global_img = processed_image
         processed_image = apply_pre_processing(img)
 
-        processed_image = flood_fill(processed_image)
+        if fill == 1:
+            processed_image = flood_fill(processed_image)
 
         # OTSU is automatic
         # This is manual thresholding 
