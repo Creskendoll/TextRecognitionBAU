@@ -57,7 +57,7 @@ def click(event, x, y, flags, param):
         # works a bit weird with grayscale
         cv2.rectangle(global_img, refPt[0], refPt[1], (255, 255, 255), 6)
 
-cv2.namedWindow("Images", cv2.WINDOW_AUTOSIZE)
+cv2.namedWindow("Images", cv2.WINDOW_FREERATIO)
 
 cv2.createTrackbar('Binary Threshold', 'Images', binary_threshold, 255, changeBinaryThreshold)
 cv2.createTrackbar('Canny Min', 'Images', canny_min, 900, changeCannyMin)
@@ -87,13 +87,13 @@ def flood_fill(img,h_max=255):
 def apply_pre_processing(image, resize_by=1):
     # so that we don't alter the original image
     new_img = image.copy()
-    new_img = new_img[250:300, 685:1230] # RoI
+    # new_img = new_img[250:300, 685:1230] # RoI
 
-    new_img = cv2.resize(new_img, (0,0), fx=resize_by, fy=resize_by)
+    # new_img = cv2.resize(new_img, (0,0), fx=resize_by, fy=resize_by)
     
     # Easy way
-    ret,th = cv2.threshold(new_img,binary_threshold,255,cv2.THRESH_BINARY)
-    return th
+    # ret,th = cv2.threshold(new_img,binary_threshold,255,cv2.THRESH_BINARY)
+    # return th
 
     # TODO: Explain wtf the canny values do
     # https://docs.opencv.org/3.1.0/da/d22/tutorial_py_canny.html
@@ -105,9 +105,9 @@ def apply_pre_processing(image, resize_by=1):
     # Dilation
     # https://docs.opencv.org/3.4/db/df6/tutorial_erosion_dilatation.html
     element = cv2.getStructuringElement(cv2.MORPH_DILATE, (dilatation_size+1, dilatation_size+1), (dilatation_size, dilatation_size))
-    new_image = cv2.dilate(canny_edge_img, element)
+    dilated_image = cv2.dilate(canny_edge_img, element)
 
-    return new_img
+    return dilated_image
 
 def apply_to_all_and_save():
     for img_name, im in images_obj.images.items():
@@ -115,37 +115,37 @@ def apply_to_all_and_save():
         f_im = flood_fill(p_im) 
         images_obj.save_image(out_folder + img_name, p_im)
 
-for img_name, img in images_obj.images.items():
-    print("Showing image:", img_name)
-    # new_image = new_image[240:320, 670:1250] # RoI
-    # img = img[250:300, 680:1230] # RoI
+if __name__ == "__main__":    
+    for img_name, img in images_obj.images.items():
+        print("Showing image:", img_name)
+        # new_image = new_image[240:320, 670:1250] # RoI
+        new_img = img[250:300, 680:1230] # RoI
+        new_img = cv2.resize(new_img, (0,0), fx=2, fy=2)
 
-    # Show cv2 windows with trackbars n shit
-    while True:
-        # for mouse clicks
-        # global_img = processed_image
-        processed_image = apply_pre_processing(img, resize_by=2)
+        # Show cv2 windows with trackbars n shit
+        while True:
+            processed_image = apply_pre_processing(new_img)
 
-        if fill:
-            processed_image = flood_fill(processed_image)
+            if fill:
+                processed_image = flood_fill(processed_image)
 
-        # OTSU is automatic
-        # This is manual thresholding 
-        # _,bin_image = cv2.threshold(img,binary_threshold,255,cv2.THRESH_BINARY)
-    
-        # original, grayscale, binary, canny
-        # stacked_image = np.vstack((img, bin_image, processed_image))
+            # OTSU is automatic
+            # This is manual thresholding 
+            _,bin_image = cv2.threshold(new_img,binary_threshold,255,cv2.THRESH_BINARY)
         
-        cv2.imshow('Images', processed_image)
+            # original, grayscale, binary, canny
+            stacked_image = np.vstack((new_img, bin_image, processed_image))
+            
+            cv2.imshow('Images', stacked_image)
 
-        # Exit when Esc is pressed
-        k = cv2.waitKey(1) & 0xFF
-        # print(k)
-        # Save individual image when s is pressed
-        if k == ord("s"):
-            images_obj.save_image(out_folder + img_name, processed_image)
-        # (p)rocess and save all the images in the in folder to the our folder
-        if k == ord("p"):
-            apply_to_all_and_save()
-        if k == ord("q") or k == 27:
-            break
+            # Exit when Esc is pressed
+            k = cv2.waitKey(1) & 0xFF
+            # print(k)
+            # Save individual image when s is pressed
+            if k == ord("s"):
+                images_obj.save_image(out_folder + img_name, processed_image)
+            # (p)rocess and save all the images in the in folder to the our folder
+            if k == ord("p"):
+                apply_to_all_and_save()
+            if k == ord("q") or k == 27:
+                break
